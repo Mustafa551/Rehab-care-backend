@@ -14,7 +14,7 @@ import {
   authenticateUser,
 } from '../models/userModel';
 import { errorLogs } from '../utils/helper';
-import { generateToken } from '../utils/helper';
+// JWT token generation removed
 import { SUCCESS } from '../messages/success';
 import { notificationPlatforms } from '../constant';
 
@@ -33,12 +33,6 @@ const loginHandler = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate JWT token
-    const token = generateToken({
-      id: user.id,
-      email: user.email,
-    });
-
     // Exclude password from response
     const { password: _, ...userWithoutPassword } = user;
 
@@ -47,7 +41,6 @@ const loginHandler = async (req: Request, res: Response) => {
       message: SUCCESS.login,
       data: {
         user: userWithoutPassword,
-        token,
       },
     });
   } catch (error: any) {

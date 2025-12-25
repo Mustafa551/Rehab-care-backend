@@ -9,7 +9,6 @@ import {
 } from '../controllers/userController';
 import {
   checkSchemaError,
-  isAuthenticated,
 } from '../middlewares/authMiddleware';
 import {
   loginValidation,
@@ -34,13 +33,12 @@ router
 
 router
   .route('/:userId')
-  .patch(isAuthenticated, updateUserValidation, checkSchemaError, updateUser)
-  .delete(isAuthenticated, deleteUserValidation, checkSchemaError, deleteUser);
+  .patch(updateUserValidation, checkSchemaError, updateUser)
+  .delete(deleteUserValidation, checkSchemaError, deleteUser);
 
 router
   .route('/:userId/update-fcm')
   .patch(
-    isAuthenticated,
     updateUserFcmValidation,
     checkSchemaError,
     updateUserFcm
