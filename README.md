@@ -1,11 +1,11 @@
-# Action Backend SQL
+# RehabCare Backend SQL
 
-A local backend server using MySQL database with pure SQL queries (no ORM).
+A local backend server using MSSQL database with pure SQL queries (no ORM).
 
 ## Features
 
 - Express.js server
-- MySQL database with pure SQL queries
+- MSSQL database with pure SQL queries
 - User management (CRUD operations)
 - FCM token management
 - JWT authentication
@@ -24,10 +24,8 @@ npm install
 PORT=8000
 JWT_SECRET=your-secret-key-here
 DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=action_backend
-DB_PORT=3306
+DB_NAME=rehabCare_backend
+DB_PORT=1433
 API_BYPASS_KEY=your-api-bypass-key-here
 ```
 
@@ -55,23 +53,21 @@ npm start
 
 ## Database
 
-The application uses MySQL database. Configure your MySQL connection using the environment variables:
-- `DB_HOST`: MySQL server host (default: localhost)
-- `DB_USER`: MySQL username (default: root)
-- `DB_PASSWORD`: MySQL password
-- `DB_NAME`: Database name (default: action_backend)
-- `DB_PORT`: MySQL port (default: 3306)
+The application uses MSSQL database with Windows Authentication. Configure your MSSQL connection using the environment variables:
+- `DB_HOST`: MSSQL server host (default: localhost)
+- `DB_NAME`: Database name (default: rehabCare_backend)
+- `DB_PORT`: MSSQL port (default: 1433)
 
 ### Database Setup
 
-1. Make sure MySQL is installed and running on your system
+1. Make sure SQL Server is installed and running on your system
 2. Create a database for the application:
    ```sql
-   CREATE DATABASE action_backend;
+   CREATE DATABASE rehabCare_backend;
    ```
-3. Update your `.env` file with your MySQL credentials
-4. The application will automatically create the required tables on first run
-5. Alternatively, you can run the setup script: `mysql -u root -p < scripts/setup-database.sql`
+3. Update your `.env` file with your MSSQL server details
+4. The application will automatically create the required tables on first run using Windows Authentication
+5. Alternatively, you can run the setup script: `sqlcmd -S localhost -E -i scripts/setup-database.sql`
 
 Tables:
 - `users` - User information

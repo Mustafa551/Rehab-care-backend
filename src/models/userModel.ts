@@ -1,20 +1,23 @@
 import { getDb } from '../config/db';
 import { User, FcmToken } from '../types/index.ds';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { hashPassword, comparePassword } from '../utils/helper';
+import sql from 'mssql';
 
 // User operations
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   const database = getDb();
-  const query = 'SELECT * FROM users WHERE LOWER(email) = LOWER(?)';
-  const [rows] = await database.execute<RowDataPacket[]>(query, [email]);
-  return rows.length > 0 ? (rows[0] as User) : null;
+  const request = database.request();
+  request.input('email', sql.NVarChar, email.toLowerCase());
+  const result = await request.query('SELECT * FROM users WHERE LOWER(email) = @email');
+  return result.recordset.length > 0 ? (result.recordset[0] as User) : null;
 };
 
 export const getUserById = async (id: number): Promise<User | null> => {
   const database = getDb();
-  const query = 'SELECT * FROM users WHERE id = ?';
-  const [rows] = await database.execute<RowDataPacket[]>(query, [id]);
-  return rows.length > 0 ? (rows[0] as User) : null;
+  const request = database.request();
+  request.input('id', sql.Int, id);
+  const result = await request.query('SELECT * FROM users WHERE id = @id');
+  return result.recordset.length > 0 ? (result.recordset[0] as User) : null;
 };
 
 export const createUser = async (userData: {
@@ -24,18 +27,24 @@ export const createUser = async (userData: {
   password: string;
 }): Promise<User> => {
   const database = getDb();
-  const query = `
+  const request = database.request();
+  
+  // Hash the password before storing
+  const hashedPassword = await hashPassword(userData.password);
+  
+  request.input('email', sql.NVarChar, userData.email.toLowerCase());
+  request.input('firstName', sql.NVarChar, userData.firstName || null);
+  request.input('lastName', sql.NVarChar, userData.lastName || null);
+  request.input('password', sql.NVarChar, hashedPassword);
+  
+  const result = await request.query(`
     INSERT INTO users (email, firstName, lastName, password)
-    VALUES (?, ?, ?, ?)
-  `;
-  const [result] = await database.execute<ResultSetHeader>(query, [
-    userData.email.toLowerCase(),
-    userData.firstName || null,
-    userData.lastName || null,
-    userData.password,
-  ]);
+    OUTPUT INSERTED.id
+    VALUES (@email, @firstName, @lastName, @password)
+  `);
 
-  const user = await getUserById(result.insertId);
+  const insertedId = result.recordset[0].id;
+  const user = await getUserById(insertedId);
   if (!user) {
     throw new Error('Failed to retrieve created user');
   }
@@ -53,47 +62,48 @@ export const updateUser = async (
 ): Promise<User | null> => {
   const database = getDb();
   const fields: string[] = [];
-  const values: any[] = [];
+  const request = database.request();
 
   if (updateData.firstName !== undefined) {
-    fields.push('firstName = ?');
-    values.push(updateData.firstName);
+    fields.push('firstName = @firstName');
+    request.input('firstName', sql.NVarChar, updateData.firstName);
   }
   if (updateData.lastName !== undefined) {
-    fields.push('lastName = ?');
-    values.push(updateData.lastName);
+    fields.push('lastName = @lastName');
+    request.input('lastName', sql.NVarChar, updateData.lastName);
   }
   if (updateData.email !== undefined) {
-    fields.push('email = ?');
-    values.push(updateData.email.toLowerCase());
+    fields.push('email = @email');
+    request.input('email', sql.NVarChar, updateData.email.toLowerCase());
   }
   if (updateData.password !== undefined) {
-    fields.push('password = ?');
-    values.push(updateData.password);
+    fields.push('password = @password');
+    const hashedPassword = await hashPassword(updateData.password);
+    request.input('password', sql.NVarChar, hashedPassword);
   }
 
   if (fields.length === 0) {
     return getUserById(id);
   }
 
-  values.push(id);
-  const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-  await database.execute(query, values);
+  request.input('id', sql.Int, id);
+  const query = `UPDATE users SET ${fields.join(', ')}, updatedAt = GETDATE() WHERE id = @id`;
+  await request.query(query);
 
   return getUserById(id);
 };
 
 export const deleteUser = async (id: number): Promise<void> => {
   const database = getDb();
-  const query = 'DELETE FROM users WHERE id = ?';
-  await database.execute(query, [id]);
+  const request = database.request();
+  request.input('id', sql.Int, id);
+  await request.query('DELETE FROM users WHERE id = @id');
 };
 
 export const getAllUsers = async (): Promise<User[]> => {
   const database = getDb();
-  const query = 'SELECT * FROM users ORDER BY createdAt DESC';
-  const [rows] = await database.execute<RowDataPacket[]>(query);
-  return rows as User[];
+  const result = await database.request().query('SELECT * FROM users ORDER BY createdAt DESC');
+  return result.recordset as User[];
 };
 
 // FCM Token operations
@@ -101,9 +111,10 @@ export const getFcmTokensByUserId = async (
   userId: number
 ): Promise<FcmToken[]> => {
   const database = getDb();
-  const query = 'SELECT * FROM fcm_tokens WHERE userId = ?';
-  const [rows] = await database.execute<RowDataPacket[]>(query, [userId]);
-  return rows as FcmToken[];
+  const request = database.request();
+  request.input('userId', sql.Int, userId);
+  const result = await request.query('SELECT * FROM fcm_tokens WHERE userId = @userId');
+  return result.recordset as FcmToken[];
 };
 
 export const getFcmToken = async (
@@ -112,10 +123,14 @@ export const getFcmToken = async (
   fcmToken: string
 ): Promise<FcmToken | null> => {
   const database = getDb();
-  const query =
-    'SELECT * FROM fcm_tokens WHERE userId = ? AND deviceId = ? AND fcmToken = ?';
-  const [rows] = await database.execute<RowDataPacket[]>(query, [userId, deviceId, fcmToken]);
-  return rows.length > 0 ? (rows[0] as FcmToken) : null;
+  const request = database.request();
+  request.input('userId', sql.Int, userId);
+  request.input('deviceId', sql.NVarChar, deviceId);
+  request.input('fcmToken', sql.NVarChar, fcmToken);
+  const result = await request.query(
+    'SELECT * FROM fcm_tokens WHERE userId = @userId AND deviceId = @deviceId AND fcmToken = @fcmToken'
+  );
+  return result.recordset.length > 0 ? (result.recordset[0] as FcmToken) : null;
 };
 
 export const addFcmToken = async (fcmData: {
@@ -125,20 +140,23 @@ export const addFcmToken = async (fcmData: {
   platform?: string;
 }): Promise<FcmToken> => {
   const database = getDb();
-  const query = `
+  const request = database.request();
+  request.input('userId', sql.Int, fcmData.userId);
+  request.input('deviceId', sql.NVarChar, fcmData.deviceId);
+  request.input('fcmToken', sql.NVarChar, fcmData.fcmToken);
+  request.input('platform', sql.NVarChar, fcmData.platform || null);
+  
+  const result = await request.query(`
     INSERT INTO fcm_tokens (userId, deviceId, fcmToken, platform)
-    VALUES (?, ?, ?, ?)
-  `;
-  const [result] = await database.execute<ResultSetHeader>(query, [
-    fcmData.userId,
-    fcmData.deviceId,
-    fcmData.fcmToken,
-    fcmData.platform || null,
-  ]);
+    OUTPUT INSERTED.id
+    VALUES (@userId, @deviceId, @fcmToken, @platform)
+  `);
 
-  const tokenQuery = 'SELECT * FROM fcm_tokens WHERE id = ?';
-  const [rows] = await database.execute<RowDataPacket[]>(tokenQuery, [result.insertId]);
-  return rows[0] as FcmToken;
+  const insertedId = result.recordset[0].id;
+  const tokenRequest = database.request();
+  tokenRequest.input('id', sql.Int, insertedId);
+  const tokenResult = await tokenRequest.query('SELECT * FROM fcm_tokens WHERE id = @id');
+  return tokenResult.recordset[0] as FcmToken;
 };
 
 export const removeFcmToken = async (
@@ -147,8 +165,27 @@ export const removeFcmToken = async (
   fcmToken: string
 ): Promise<void> => {
   const database = getDb();
-  const query =
-    'DELETE FROM fcm_tokens WHERE userId = ? AND deviceId = ? AND fcmToken = ?';
-  await database.execute(query, [userId, deviceId, fcmToken]);
+  const request = database.request();
+  request.input('userId', sql.Int, userId);
+  request.input('deviceId', sql.NVarChar, deviceId);
+  request.input('fcmToken', sql.NVarChar, fcmToken);
+  await request.query(
+    'DELETE FROM fcm_tokens WHERE userId = @userId AND deviceId = @deviceId AND fcmToken = @fcmToken'
+  );
+};
+
+// Authentication function
+export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    return null;
+  }
+  
+  const isPasswordValid = await comparePassword(password, user.password);
+  if (!isPasswordValid) {
+    return null;
+  }
+  
+  return user;
 };
 

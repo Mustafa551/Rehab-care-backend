@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 export const errorLogs = (endpoint: string, error: Error | string) => {
   console.log(`ERR [${endpoint}] ====> ${error}`);
@@ -47,5 +48,14 @@ export const generateToken = (payload: {
   }
 
   return jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
+};
+
+export const hashPassword = async (password: string): Promise<string> => {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+};
+
+export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+  return await bcrypt.compare(password, hashedPassword);
 };
 

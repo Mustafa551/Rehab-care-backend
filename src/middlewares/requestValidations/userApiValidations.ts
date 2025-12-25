@@ -1,15 +1,12 @@
 import { checkSchema, ParamSchema } from 'express-validator';
+import { notificationPlatforms } from '../../constant';
 import { ERRORS } from '../../messages/errors';
 import {
   emailAddressSchema,
-  simpleArraySchemaFunc,
-  simpleIntSchemaFunc,
-  simpleTextSchemaFunc,
-  simpleIdSchemaFunc,
-  simpleObjectSchemaFunc,
   passwordSchemaFunct,
+  simpleIdSchemaFunc,
+  simpleTextSchemaFunc
 } from '../../utils/requestValidations';
-import { notificationPlatforms } from '../../constant';
 
 const createUserValidation = checkSchema({
   myCustomField: {
@@ -205,10 +202,6 @@ const updateUserFcmValidation = checkSchema({
 });
 
 export {
-  createUserValidation,
-  getUserByIdValidation,
-  updateUserValidation,
-  deleteUserValidation,
-  updateUserFcmValidation,
+  createUserValidation, deleteUserValidation, getUserByIdValidation, updateUserFcmValidation, updateUserValidation
 };
 

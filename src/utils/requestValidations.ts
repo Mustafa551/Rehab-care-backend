@@ -120,7 +120,7 @@ export const simpleIntSchemaFunc = ({
   trim: true,
 });
 
-const simpleFloatSchemaFunc = ({
+export const simpleFloatSchemaFunc = ({
   dataIn = 'body',
   label = '',
   required = true,
@@ -156,7 +156,7 @@ export const simpleBooleanSchemaFunc = ({
   },
 });
 
-const dateSchemaFunc = ({ dataIn = 'body', label = '', required = true }) => ({
+export const dateSchemaFunc = ({ dataIn = 'body', label = '', required = true }) => ({
   in: [dataIn],
   exists: required ? { options: { checkNull: true, checkFalsy: true } } : null,
   optional: required ? null : { options: { nullable: true } },

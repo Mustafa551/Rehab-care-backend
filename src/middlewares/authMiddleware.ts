@@ -16,7 +16,6 @@ const isAuthenticated = async (
   // Retrieve the authorization header (case-insensitive)
   const authHeader =
     req.headers.authorization || (req.headers.Authorization as string) || null;
-  const customReq = req as unknown as IGetUserAuthInfoRequest;
 
   if (!authHeader) {
     return res.status(STATUS.unauthorized).json({
@@ -50,9 +49,9 @@ const isAuthenticated = async (
 
       if (!isUser) {
         return res.status(STATUS.unauthorized).json({
-          message: ERRORS.tokenUserNotFound,
+          message: ERRORS.userNotFound,
           error: true,
-          code: 'tokenUserNotFound',
+          code: 'userNotFound',
         });
       }
 
@@ -63,11 +62,14 @@ const isAuthenticated = async (
         parseInt(req.params.userId, 10) !== isUser.id
       ) {
         return res.status(STATUS.unauthorized).json({
-          message: ERRORS.tokenUserDoesNotMatch,
+          message: ERRORS.accessDenied,
           error: true,
-          code: 'tokenUserDoesNotMatch',
+          code: 'accessDenied',
         });
       }
+      
+      // Add user info to request
+      const customReq = req as unknown as IGetUserAuthInfoRequest;
       customReq.user = {
         id: isUser.id,
         email: isUser.email,
@@ -80,8 +82,8 @@ const isAuthenticated = async (
 
     return res.status(STATUS.unauthorized).json({
       error: true,
-      message: ERRORS.unableToAuthorize,
-      code: 'unableToAuthorize',
+      message: ERRORS.unableToAuthenticate,
+      code: 'unableToAuthenticate',
     });
   }
 };
@@ -89,7 +91,6 @@ const isAuthenticated = async (
 const isAdminRole = (req: Request, res: Response, next: NextFunction) => {
   const authHeader =
     req.headers.authorization || (req.headers.Authorization as string) || null;
-  const customReq = req as unknown as IGetUserAuthInfoRequest;
 
   if (authHeader === process.env.API_BYPASS_KEY) {
     console.log('bypass due to api key');
