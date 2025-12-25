@@ -60,6 +60,7 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+
   // Create admin user if it doesn't exist
   await createAdminUser();
 
@@ -76,7 +77,7 @@ const createAdminUser = async (): Promise<void> => {
   
   if (result.recordset.length === 0) {
     // Create admin user
-    const hashedPassword = await hashPassword('admin123');
+    const hashedPassword = await hashPassword('Admin12345!');
     const adminRequest = database.request();
     adminRequest.input('email', sql.NVarChar, 'admin@rehab.com');
     adminRequest.input('firstName', sql.NVarChar, 'Rehab');

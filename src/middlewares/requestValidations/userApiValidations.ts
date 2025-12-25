@@ -8,6 +8,36 @@ import {
   simpleTextSchemaFunc
 } from '../../utils/requestValidations';
 
+const loginValidation = checkSchema({
+  myCustomField: {
+    // custom validation for checking we are getting right only allowed parameter in req.body
+    custom: {
+      options: (value, { req, location, path }) => {
+        const allowedFields: any = {
+          email: 'email',
+          password: 'password',
+        };
+
+        const keys = Object.keys(req.body);
+
+        if (keys?.length == 0) {
+          throw new Error(ERRORS.invalidReqBody);
+        }
+
+        keys.forEach((value) => {
+          if (!allowedFields[value]) {
+            throw new Error(`${ERRORS.invalidParameter} ${value}`);
+          }
+        });
+
+        return value + req.body + location + path;
+      },
+    },
+  },
+  email: emailAddressSchema({}) as ParamSchema,
+  password: passwordSchemaFunct({}) as ParamSchema,
+});
+
 const createUserValidation = checkSchema({
   myCustomField: {
     // custom validation for checking we are getting right only allowed parameter in req.body
@@ -202,6 +232,7 @@ const updateUserFcmValidation = checkSchema({
 });
 
 export {
+  loginValidation,
   createUserValidation, deleteUserValidation, getUserByIdValidation, updateUserFcmValidation, updateUserValidation
 };
 

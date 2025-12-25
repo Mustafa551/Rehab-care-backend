@@ -11,10 +11,53 @@ import {
   getFcmToken,
   addFcmToken,
   removeFcmToken,
+  authenticateUser,
 } from '../models/userModel';
 import { errorLogs } from '../utils/helper';
+import { generateToken } from '../utils/helper';
 import { SUCCESS } from '../messages/success';
 import { notificationPlatforms } from '../constant';
+
+// LOGIN USER
+const loginHandler = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    // Authenticate user
+    const user = await authenticateUser(email, password);
+
+    if (!user) {
+      return res.status(STATUS.unauthorized).json({
+        error: true,
+        message: ERRORS.notAuthorizedException,
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+    });
+
+    // Exclude password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.status(STATUS.success).json({
+      success: true,
+      message: SUCCESS.login,
+      data: {
+        user: userWithoutPassword,
+        token,
+      },
+    });
+  } catch (error: any) {
+    errorLogs('login', error.message);
+    return res.status(STATUS.serverError).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
 
 // CREATE USER
 const createUserHandler = async (req: Request, res: Response) => {
@@ -286,6 +329,7 @@ const updateUserFcmHandler = async (req: Request, res: Response) => {
 };
 
 export {
+  loginHandler as login,
   createUserHandler as createUser,
   getUserByIdHandler as getUserById,
   updateUserHandler as updateUser,

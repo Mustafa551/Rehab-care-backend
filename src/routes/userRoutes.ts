@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  login,
   createUser,
   deleteUser,
   getUserById,
@@ -11,6 +12,7 @@ import {
   isAuthenticated,
 } from '../middlewares/authMiddleware';
 import {
+  loginValidation,
   createUserValidation,
   deleteUserValidation,
   getUserByIdValidation,
@@ -19,6 +21,11 @@ import {
 } from '../middlewares/requestValidations/userApiValidations';
 
 const router = Router();
+
+// Login route
+router
+  .route('/login')
+  .post(loginValidation, checkSchemaError, login);
 
 router
   .route('/')
