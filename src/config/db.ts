@@ -60,6 +60,36 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+  // Create FCM tokens table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='fcm_tokens' AND xtype='U')
+    CREATE TABLE fcm_tokens (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      userId INT NOT NULL,
+      deviceId NVARCHAR(255) NOT NULL,
+      fcmToken NVARCHAR(MAX) NOT NULL,
+      platform NVARCHAR(50),
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create staff table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='staff' AND xtype='U')
+    CREATE TABLE staff (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      name NVARCHAR(255) NOT NULL,
+      role NVARCHAR(50) NOT NULL CHECK (role IN ('nurse', 'caretaker', 'therapist', 'doctor')),
+      email NVARCHAR(255) UNIQUE NOT NULL,
+      phone NVARCHAR(20) NOT NULL,
+      isOnDuty BIT DEFAULT 1,
+      photoUrl NVARCHAR(MAX),
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE()
+    )
+  `);
 
   // Create admin user if it doesn't exist
   await createAdminUser();

@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import express, { Express, json, Request, Response } from 'express';
 import userRoutes from './routes/userRoutes';
+import staffRoutes from './routes/staffRoutes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(cors({ origin: '*', methods: '*' }));
 app.use(json());
 
 app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/staff', staffRoutes);
 
 app.use((req: Request, res: Response) => {
   console.log('🚀 ~ app.use ~ req:', req);

@@ -14,5 +14,8 @@ export const SUCCESS = {
   changePass: 'Password changed successfully.',
   tokenRemoved: 'FCM token removed successfully',
   streakReminderUpdated: 'Streak reminder settings updated successfully',
+  staffCreated: 'Staff member created successfully',
+  staffUpdated: 'Staff member updated successfully',
+  staffDeleted: 'Staff member deleted successfully',
 };
 

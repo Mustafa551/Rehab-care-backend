@@ -48,3 +48,15 @@ export interface FcmToken {
   updatedAt: string;
 }
 
+export interface Staff {
+  id: number;
+  name: string;
+  role: 'nurse' | 'caretaker' | 'therapist' | 'doctor';
+  email: string;
+  phone: string;
+  isOnDuty: boolean;
+  photoUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
