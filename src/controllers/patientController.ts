@@ -12,6 +12,7 @@ import {
   getPatientsByStatus,
   getPatientsByDoctor,
 } from '../models/patientModel';
+import { autoAssignStaffToNewPatient } from '../models/assignmentModel';
 
 // GET ALL PATIENTS
 const getAllPatientsHandler = async (req: Request, res: Response) => {
@@ -98,6 +99,14 @@ const createPatientHandler = async (req: Request, res: Response) => {
     };
 
     const newPatient = await createPatient(patientData);
+
+    // Auto-assign a non-doctor staff member to the new patient
+    try {
+      await autoAssignStaffToNewPatient(newPatient.id.toString());
+    } catch (assignmentError: any) {
+      console.warn('Failed to auto-assign staff to new patient:', assignmentError.message);
+      // Don't fail the patient creation if staff assignment fails
+    }
 
     return res.status(STATUS.created).json({
       success: true,

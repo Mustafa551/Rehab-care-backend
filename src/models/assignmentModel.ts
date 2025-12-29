@@ -99,10 +99,16 @@ export const generateAssignmentsForDate = async (date: string): Promise<StaffAss
   // Separate other staff for rotation
   const otherStaff = allStaff.filter(s => s.role !== 'doctor');
   
-  // Mock patients (in real app, this would come from patients table)
-  const patients = [
-    'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10'
-  ];
+  // Get all active patients from the database
+  const patientsResult = await database.request().query(`
+    SELECT id FROM patients WHERE status = 'active'
+  `);
+  const patients = patientsResult.recordset.map(p => p.id.toString());
+  
+  if (patients.length === 0) {
+    console.warn('No active patients found for assignment');
+    return [];
+  }
   
   // Calculate day of year for rotation
   const dateObj = new Date(date);
@@ -129,14 +135,13 @@ export const generateAssignmentsForDate = async (date: string): Promise<StaffAss
     doctorPatientMap.set(assignment.patientId, assignment.doctorId);
   });
   
-  // Assign rotating staff to patients who DON'T have permanent doctors
-  const patientsWithoutDoctors = patients.filter(patientId => !doctorPatientMap.has(patientId));
-  
-  for (let i = 0; i < patientsWithoutDoctors.length; i++) {
-    const patientId = patientsWithoutDoctors[i];
-    
-    if (otherStaff.length > 0) {
-      // Rotate non-doctor staff
+  // Assign ALL patients to non-doctor staff (for daily care)
+  // This is separate from doctor assignments - patients can have both a doctor AND daily staff
+  if (otherStaff.length > 0) {
+    for (let i = 0; i < patients.length; i++) {
+      const patientId = patients[i];
+      
+      // Rotate non-doctor staff for ALL patients
       const staffIndex = (i + dayOfYear) % otherStaff.length;
       const assignedStaff = otherStaff[staffIndex];
       
@@ -163,7 +168,7 @@ export const generateAssignmentsForDate = async (date: string): Promise<StaffAss
     }
   }
   
-  // Add doctor assignments to staff_assignments table for this date (if they don't already exist)
+  // Also add doctor assignments to staff_assignments table for this date (for completeness)
   for (const [patientId, doctorId] of doctorPatientMap.entries()) {
     const insertRequest = database.request();
     insertRequest.input('staffId', sql.Int, doctorId);
@@ -235,4 +240,69 @@ export const getAssignmentsByPatientId = async (patientId: string, date?: string
   
   const result = await request.query(query);
   return result.recordset as StaffAssignment[];
+};
+
+// Auto-assign a non-doctor staff member to a new patient
+export const autoAssignStaffToNewPatient = async (patientId: string): Promise<StaffAssignment | null> => {
+  const database = getDb();
+  
+  // Get all active non-doctor staff members
+  const staffResult = await database.request().query(`
+    SELECT * FROM staff 
+    WHERE isOnDuty = 1 AND role != 'doctor'
+    ORDER BY id
+  `);
+  const nonDoctorStaff = staffResult.recordset;
+  
+  if (nonDoctorStaff.length === 0) {
+    console.warn('No active non-doctor staff available for auto-assignment');
+    return null;
+  }
+  
+  // Get current date
+  const currentDate = new Date().toISOString().split('T')[0];
+  
+  // Find the staff member with the least assignments for today
+  let selectedStaff = nonDoctorStaff[0];
+  let minAssignments = Infinity;
+  
+  for (const staff of nonDoctorStaff) {
+    const assignmentCountResult = await database.request()
+      .input('staffId', sql.Int, staff.id)
+      .input('date', sql.Date, currentDate)
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM staff_assignments 
+        WHERE staffId = @staffId AND date = @date
+      `);
+    
+    const assignmentCount = assignmentCountResult.recordset[0].count;
+    if (assignmentCount < minAssignments) {
+      minAssignments = assignmentCount;
+      selectedStaff = staff;
+    }
+  }
+  
+  // Create assignment for today
+  const insertRequest = database.request();
+  insertRequest.input('staffId', sql.Int, selectedStaff.id);
+  insertRequest.input('patientId', sql.NVarChar, patientId);
+  insertRequest.input('date', sql.Date, currentDate);
+  
+  try {
+    const result = await insertRequest.query(`
+      INSERT INTO staff_assignments (staffId, patientId, date)
+      OUTPUT INSERTED.*
+      VALUES (@staffId, @patientId, @date)
+    `);
+    
+    console.log(`Auto-assigned staff ${selectedStaff.name} (ID: ${selectedStaff.id}) to patient ${patientId}`);
+    return result.recordset[0] as StaffAssignment;
+  } catch (error: any) {
+    if (error.message.includes('UNIQUE KEY constraint')) {
+      console.warn(`Patient ${patientId} already has staff assignment for ${currentDate}`);
+      return null;
+    }
+    throw error;
+  }
 };
