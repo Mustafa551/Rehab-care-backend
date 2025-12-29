@@ -6,6 +6,7 @@ import {
   getAssignmentsByPatient,
   getDoctorAssignments,
   assignDoctor,
+  initializeAssignments,
 } from '../controllers/assignmentController';
 
 const router = Router();
@@ -13,6 +14,7 @@ const router = Router();
 // Assignment routes
 router.get('/', getAssignmentsByDate); // GET /assignments?date=2024-01-01
 router.post('/generate', generateAssignments); // POST /assignments/generate
+router.post('/initialize', initializeAssignments); // POST /assignments/initialize
 router.get('/staff/:staffId', getAssignmentsByStaff); // GET /assignments/staff/1?date=2024-01-01
 router.get('/patient/:patientId', getAssignmentsByPatient); // GET /assignments/patient/p1?date=2024-01-01
 
