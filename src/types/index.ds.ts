@@ -1,33 +1,3 @@
-import { Request } from 'express';
-
-export interface TextValidationSchema {
-  in: string;
-  exists: { options: { checkNull: boolean; checkFalsy: boolean } } | null;
-  errorMessage: string;
-  isString: { errorMessage: string; bail: boolean };
-  notEmpty: {
-    options: { ignore_whitespace: boolean };
-    errorMessage: string;
-    bail: boolean;
-  };
-  trim: boolean;
-  optional: { options: { nullable: boolean } } | null;
-}
-
-interface UserType {
-  id: number;
-  email: string;
-}
-
-export interface IGetUserAuthInfoRequest extends Request {
-  user?: UserType;
-  userRole?: string;
-}
-
-export interface CustomRequest extends Request {
-  userRole?: string;
-}
-
 export interface User {
   id: number;
   email: string;
@@ -60,3 +30,50 @@ export interface Staff {
   updatedAt: string;
 }
 
+export interface Patient {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  medicalCondition: string;
+  assignedDoctorId?: number;
+  status: 'active' | 'inactive' | 'discharged';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Assignment {
+  id: number;
+  staffId: number;
+  patientId: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DoctorPatientAssignment {
+  id: number;
+  doctorId: number;
+  patientId: string;
+  assignedDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TextValidationSchema {
+  in: string[];
+  exists?: { options: { checkNull: boolean; checkFalsy: boolean } } | null;
+  optional?: { options: { nullable: boolean } } | null;
+  errorMessage: string;
+  isString: {
+    errorMessage: string;
+    bail?: boolean;
+  };
+  notEmpty: {
+    options: { ignore_whitespace: boolean };
+    errorMessage: string;
+    bail?: boolean;
+  };
+  trim?: boolean;
+}

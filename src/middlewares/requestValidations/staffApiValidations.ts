@@ -135,7 +135,7 @@ const getStaffByIdValidation = checkSchema({
       },
     },
   },
-  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }),
+  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 const updateStaffValidation = checkSchema({
@@ -202,7 +202,7 @@ const updateStaffValidation = checkSchema({
     label: 'photoUrl',
     required: false,
   }) as unknown as ParamSchema,
-  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }),
+  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 const deleteStaffValidation = checkSchema({
@@ -219,7 +219,7 @@ const deleteStaffValidation = checkSchema({
       },
     },
   },
-  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }),
+  staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 export {

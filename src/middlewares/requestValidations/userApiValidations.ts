@@ -147,7 +147,7 @@ const updateUserValidation = checkSchema({
   }) as unknown as ParamSchema,
   email: emailAddressSchema({ required: false }) as ParamSchema,
   password: passwordSchemaFunct({ required: false }) as ParamSchema,
-  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }),
+  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 const deleteUserValidation = checkSchema({
@@ -165,7 +165,7 @@ const deleteUserValidation = checkSchema({
       },
     },
   },
-  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }),
+  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 // VALIDATION SCHEMA FOR UPDATE USER FCM API
@@ -228,7 +228,7 @@ const updateUserFcmValidation = checkSchema({
   fcmToken: simpleTextSchemaFunc({
     label: 'fcmToken',
   }) as unknown as ParamSchema,
-  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }),
+  userId: simpleIdSchemaFunc({ label: 'userId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 
 export {

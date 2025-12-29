@@ -106,6 +106,24 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+  // Create patients table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='patients' AND xtype='U')
+    CREATE TABLE patients (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      name NVARCHAR(255) NOT NULL,
+      email NVARCHAR(255) UNIQUE NOT NULL,
+      phone NVARCHAR(20) NOT NULL,
+      dateOfBirth DATE NOT NULL,
+      medicalCondition NVARCHAR(500) NOT NULL,
+      assignedDoctorId INT,
+      status NVARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'discharged')),
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (assignedDoctorId) REFERENCES staff(id) ON DELETE SET NULL
+    )
+  `);
+
   // Create doctor-patient permanent assignments table
   await database.request().query(`
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='doctor_patient_assignments' AND xtype='U')

@@ -17,5 +17,8 @@ export const SUCCESS = {
   staffCreated: 'Staff member created successfully',
   staffUpdated: 'Staff member updated successfully',
   staffDeleted: 'Staff member deleted successfully',
+  patientCreated: 'Patient created successfully',
+  patientUpdated: 'Patient updated successfully',
+  patientDeleted: 'Patient deleted successfully',
 };
 
