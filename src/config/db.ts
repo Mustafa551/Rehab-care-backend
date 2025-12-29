@@ -91,6 +91,36 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+  // Create staff assignments table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='staff_assignments' AND xtype='U')
+    CREATE TABLE staff_assignments (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      staffId INT NOT NULL,
+      patientId NVARCHAR(50) NOT NULL,
+      date DATE NOT NULL,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (staffId) REFERENCES staff(id) ON DELETE CASCADE,
+      UNIQUE(patientId, date)
+    )
+  `);
+
+  // Create doctor-patient permanent assignments table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='doctor_patient_assignments' AND xtype='U')
+    CREATE TABLE doctor_patient_assignments (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      doctorId INT NOT NULL,
+      patientId NVARCHAR(50) NOT NULL,
+      assignedDate DATE DEFAULT GETDATE(),
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (doctorId) REFERENCES staff(id) ON DELETE CASCADE,
+      UNIQUE(patientId)
+    )
+  `);
+
   // Create admin user if it doesn't exist
   await createAdminUser();
 
