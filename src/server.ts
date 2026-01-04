@@ -3,7 +3,6 @@ import cors from 'cors';
 import express, { Express, json, Request, Response } from 'express';
 import userRoutes from './routes/userRoutes';
 import staffRoutes from './routes/staffRoutes';
-import assignmentRoutes from './routes/assignmentRoutes';
 import patientRoutes from './routes/patientRoutes';
 
 dotenv.config();
@@ -29,7 +28,6 @@ app.use(json());
 
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/staff', staffRoutes);
-app.use('/api/v1/assignments', assignmentRoutes);
 app.use('/api/v1/patients', patientRoutes);
 
 app.use((req: Request, res: Response) => {

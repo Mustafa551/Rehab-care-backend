@@ -66,24 +66,6 @@ export interface Patient {
   dischargedBy?: string;
 }
 
-export interface Assignment {
-  id: number;
-  staffId: number;
-  patientId: string;
-  date: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DoctorPatientAssignment {
-  id: number;
-  doctorId: number;
-  patientId: string;
-  assignedDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface TextValidationSchema {
   in: string[];
   exists?: { options: { checkNull: boolean; checkFalsy: boolean } } | null;
