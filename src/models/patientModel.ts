@@ -2,11 +2,21 @@ import { getDb } from '../config/db';
 import { Patient } from '../types/index.ds';
 import sql from 'mssql';
 
+// Helper function to parse JSON fields in patient data
+const parsePatientData = (rawPatient: any): Patient => {
+  return {
+    ...rawPatient,
+    diseases: rawPatient.diseases ? JSON.parse(rawPatient.diseases) : [],
+    assignedNurses: rawPatient.assignedNurses ? JSON.parse(rawPatient.assignedNurses) : [],
+    currentMedications: rawPatient.currentMedications ? JSON.parse(rawPatient.currentMedications) : [],
+  };
+};
+
 // Patient operations
 export const getAllPatients = async (): Promise<Patient[]> => {
   const database = getDb();
   const result = await database.request().query('SELECT * FROM patients ORDER BY createdAt DESC');
-  return result.recordset as Patient[];
+  return result.recordset.map(parsePatientData);
 };
 
 export const getPatientById = async (id: number): Promise<Patient | null> => {
@@ -14,7 +24,7 @@ export const getPatientById = async (id: number): Promise<Patient | null> => {
   const request = database.request();
   request.input('id', sql.Int, id);
   const result = await request.query('SELECT * FROM patients WHERE id = @id');
-  return result.recordset.length > 0 ? (result.recordset[0] as Patient) : null;
+  return result.recordset.length > 0 ? parsePatientData(result.recordset[0]) : null;
 };
 
 export const getPatientByEmail = async (email: string): Promise<Patient | null> => {

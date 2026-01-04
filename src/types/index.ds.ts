@@ -49,14 +49,14 @@ export interface Patient {
   gender?: 'male' | 'female' | 'other';
   address?: string;
   emergencyContact?: string;
-  diseases?: string; // JSON string of disease IDs
-  assignedNurses?: string; // JSON string of nurse IDs
+  diseases?: string[]; // Array of disease IDs (parsed from JSON)
+  assignedNurses?: string[]; // Array of nurse IDs (parsed from JSON)
   initialDeposit?: number;
   roomType?: 'general' | 'semi-private' | 'private';
   roomNumber?: number;
   admissionDate?: string;
   // Medical tracking fields
-  currentMedications?: string; // JSON string
+  currentMedications?: string[]; // Array of medications (parsed from JSON)
   lastAssessmentDate?: string;
   dischargeStatus?: 'continue' | 'ready' | 'pending';
   // Discharge-specific fields
