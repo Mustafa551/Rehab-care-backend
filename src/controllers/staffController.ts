@@ -11,15 +11,20 @@ import {
   deleteStaff,
   getStaffByRole,
   getOnDutyStaff,
+  getDoctorsByDiseases,
 } from '../models/staffModel';
 
 // GET ALL STAFF
 const getAllStaffHandler = async (req: Request, res: Response) => {
   try {
-    const { role, onDuty } = req.query;
+    const { role, onDuty, diseases } = req.query;
     let staff;
 
-    if (role) {
+    if (diseases && typeof diseases === 'string') {
+      // Get doctors by diseases for patient registration
+      const diseaseArray = diseases.split(',').map(d => d.trim());
+      staff = await getDoctorsByDiseases(diseaseArray);
+    } else if (role) {
       staff = await getStaffByRole(role as 'nurse' | 'doctor');
     } else if (onDuty === 'true') {
       staff = await getOnDutyStaff();

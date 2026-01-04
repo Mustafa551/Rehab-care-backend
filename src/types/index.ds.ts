@@ -44,6 +44,21 @@ export interface Patient {
   status: 'active' | 'inactive' | 'discharged';
   createdAt: string;
   updatedAt: string;
+  // New comprehensive registration fields
+  age?: number;
+  gender?: 'male' | 'female' | 'other';
+  address?: string;
+  emergencyContact?: string;
+  diseases?: string; // JSON string of disease IDs
+  assignedNurses?: string; // JSON string of nurse IDs
+  initialDeposit?: number;
+  roomType?: 'general' | 'semi-private' | 'private';
+  roomNumber?: number;
+  admissionDate?: string;
+  // Medical tracking fields
+  currentMedications?: string; // JSON string
+  lastAssessmentDate?: string;
+  dischargeStatus?: 'continue' | 'ready' | 'pending';
 }
 
 export interface Assignment {

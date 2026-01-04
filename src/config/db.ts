@@ -78,6 +78,39 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+  // Create patients table - matching frontend exactly
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='patients' AND xtype='U')
+    CREATE TABLE patients (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      name NVARCHAR(255) NOT NULL,
+      email NVARCHAR(255) UNIQUE NOT NULL,
+      phone NVARCHAR(20) NOT NULL,
+      dateOfBirth DATE NOT NULL,
+      medicalCondition NVARCHAR(MAX) NOT NULL,
+      assignedDoctorId INT NULL,
+      status NVARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'discharged')),
+      -- New comprehensive registration fields
+      age INT NULL,
+      gender NVARCHAR(10) NULL CHECK (gender IS NULL OR gender IN ('male', 'female', 'other')),
+      address NVARCHAR(MAX) NULL,
+      emergencyContact NVARCHAR(255) NULL,
+      diseases NVARCHAR(MAX) NULL, -- JSON string of disease IDs
+      assignedNurses NVARCHAR(MAX) NULL, -- JSON string of nurse IDs
+      initialDeposit DECIMAL(10,2) NULL,
+      roomType NVARCHAR(20) NULL CHECK (roomType IS NULL OR roomType IN ('general', 'semi-private', 'private')),
+      roomNumber INT NULL,
+      admissionDate DATE NULL,
+      -- Medical tracking fields
+      currentMedications NVARCHAR(MAX) NULL, -- JSON string
+      lastAssessmentDate DATE NULL,
+      dischargeStatus NVARCHAR(20) NULL CHECK (dischargeStatus IS NULL OR dischargeStatus IN ('continue', 'ready', 'pending')),
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (assignedDoctorId) REFERENCES staff(id) ON DELETE SET NULL
+    )
+  `);
+
 
   // Create admin user if it doesn't exist
   await createAdminUser();

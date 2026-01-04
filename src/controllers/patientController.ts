@@ -77,7 +77,14 @@ const getPatientByIdHandler = async (req: Request, res: Response) => {
 // CREATE PATIENT
 const createPatientHandler = async (req: Request, res: Response) => {
   try {
-    const { name, email, phone, dateOfBirth, medicalCondition, assignedDoctorId, status } = req.body;
+    const { 
+      name, email, phone, dateOfBirth, medicalCondition, assignedDoctorId, status,
+      // New comprehensive registration fields
+      age, gender, address, emergencyContact, diseases, assignedNurses, 
+      initialDeposit, roomType, roomNumber, admissionDate,
+      // Medical tracking fields
+      currentMedications, lastAssessmentDate, dischargeStatus
+    } = req.body;
 
     // Check if patient with email already exists
     const existingPatient = await getPatientByEmail(email);
@@ -85,6 +92,49 @@ const createPatientHandler = async (req: Request, res: Response) => {
       return res.status(STATUS.badRequest).json({
         error: true,
         message: 'Patient with this email already exists',
+      });
+    }
+
+    // Validate Pakistani phone format
+    if (phone) {
+      const phoneRegex = /^(\+92|0)?[0-9]{3}-?[0-9]{7}$|^(\+92|0)?[0-9]{10}$/;
+      if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+        return res.status(STATUS.badRequest).json({
+          error: true,
+          message: 'Please enter a valid Pakistani phone number (e.g., +92-300-1234567 or 0300-1234567)',
+        });
+      }
+    }
+
+    // Validate required fields for comprehensive registration
+    if (!name || !phone || !age || !gender || !address || !emergencyContact) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Missing required fields: name, phone, age, gender, address, emergencyContact',
+      });
+    }
+
+    // Validate diseases array
+    if (diseases && (!Array.isArray(diseases) || diseases.length === 0)) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'At least one disease must be selected',
+      });
+    }
+
+    // Validate nurse assignment (exactly 2 nurses required)
+    if (assignedNurses && (!Array.isArray(assignedNurses) || assignedNurses.length !== 2)) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Exactly 2 nurses must be assigned to each patient',
+      });
+    }
+
+    // Validate initial deposit
+    if (initialDeposit && initialDeposit <= 0) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Initial deposit must be greater than 0',
       });
     }
 
@@ -96,11 +146,26 @@ const createPatientHandler = async (req: Request, res: Response) => {
       medicalCondition,
       assignedDoctorId,
       status: status || 'active',
+      // New comprehensive fields
+      age,
+      gender,
+      address,
+      emergencyContact,
+      diseases,
+      assignedNurses,
+      initialDeposit,
+      roomType,
+      roomNumber,
+      admissionDate,
+      // Medical tracking fields
+      currentMedications,
+      lastAssessmentDate,
+      dischargeStatus,
     };
 
     const newPatient = await createPatient(patientData);
 
-    // Auto-assign a non-doctor staff member to the new patient
+    // Auto-assign a non-doctor staff member to the new patient (legacy support)
     try {
       await autoAssignStaffToNewPatient(newPatient.id.toString());
     } catch (assignmentError: any) {
@@ -110,7 +175,7 @@ const createPatientHandler = async (req: Request, res: Response) => {
 
     return res.status(STATUS.created).json({
       success: true,
-      message: SUCCESS.patientCreated,
+      message: SUCCESS.patientCreated || 'Patient registered successfully with comprehensive details',
       data: newPatient,
     });
   } catch (error: any) {

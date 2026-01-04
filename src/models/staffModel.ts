@@ -137,6 +137,62 @@ export const getStaffByRole = async (role: 'nurse' | 'doctor'): Promise<Staff[]>
   return result.recordset as Staff[];
 };
 
+export const getDoctorsBySpecialization = async (specializations: string[]): Promise<Staff[]> => {
+  const database = getDb();
+  const request = database.request();
+  
+  // Create placeholders for specializations
+  const placeholders = specializations.map((_, index) => `@spec${index}`).join(', ');
+  
+  // Add parameters for each specialization
+  specializations.forEach((spec, index) => {
+    request.input(`spec${index}`, sql.NVarChar, spec);
+  });
+  
+  const result = await request.query(`
+    SELECT * FROM staff 
+    WHERE role = 'doctor' 
+    AND specialization IN (${placeholders})
+    ORDER BY name
+  `);
+  
+  return result.recordset as Staff[];
+};
+
+export const getDoctorsByDiseases = async (diseases: string[]): Promise<Staff[]> => {
+  
+  // Map diseases to doctor specializations
+  const diseaseToSpecialization: Record<string, string[]> = {
+    'heart-disease': ['cardiologist'],
+    'blood-pressure': ['cardiologist'],
+    'diabetes': ['endocrinologist'],
+    'kidney-disease': ['endocrinologist'],
+    'asthma': ['pulmonologist'],
+    'fever': ['pulmonologist', 'general'],
+    'depression': ['psychiatrist'],
+    'anxiety': ['psychiatrist'],
+    'stroke': ['neurologist'],
+    'cancer': ['oncologist'],
+    'arthritis': ['general'],
+    'liver-disease': ['general']
+  };
+  
+  // Get all relevant specializations for the diseases
+  const relevantSpecializations = new Set<string>();
+  diseases.forEach(disease => {
+    const specs = diseaseToSpecialization[disease] || ['general'];
+    specs.forEach(spec => relevantSpecializations.add(spec));
+  });
+  
+  const specializationsArray = Array.from(relevantSpecializations);
+  
+  if (specializationsArray.length === 0) {
+    return [];
+  }
+  
+  return await getDoctorsBySpecialization(specializationsArray);
+};
+
 export const getOnDutyStaff = async (): Promise<Staff[]> => {
   const database = getDb();
   const result = await database.request().query('SELECT * FROM staff WHERE isOnDuty = 1 ORDER BY name');
