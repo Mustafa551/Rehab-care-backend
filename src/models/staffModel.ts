@@ -160,7 +160,7 @@ export const getDoctorsBySpecialization = async (specializations: string[]): Pro
 };
 
 export const getDoctorsByDiseases = async (diseases: string[]): Promise<Staff[]> => {
-  
+``  
   // Map diseases to doctor specializations
   const diseaseToSpecialization: Record<string, string[]> = {
     'heart-disease': ['cardiologist'],

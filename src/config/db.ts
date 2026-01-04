@@ -105,6 +105,11 @@ const initializeTables = async (): Promise<void> => {
       currentMedications NVARCHAR(MAX) NULL, -- JSON string
       lastAssessmentDate DATE NULL,
       dischargeStatus NVARCHAR(20) NULL CHECK (dischargeStatus IS NULL OR dischargeStatus IN ('continue', 'ready', 'pending')),
+      -- Discharge-specific fields
+      dischargeNotes NVARCHAR(MAX) NULL,
+      finalBillAmount DECIMAL(10,2) NULL,
+      dischargeDate DATE NULL,
+      dischargedBy NVARCHAR(100) NULL,
       createdAt DATETIME2 DEFAULT GETDATE(),
       updatedAt DATETIME2 DEFAULT GETDATE(),
       FOREIGN KEY (assignedDoctorId) REFERENCES staff(id) ON DELETE SET NULL

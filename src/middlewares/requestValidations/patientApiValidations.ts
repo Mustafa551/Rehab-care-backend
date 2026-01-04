@@ -551,10 +551,90 @@ const deletePatientValidation = checkSchema({
   }) as unknown as ParamSchema,
 });
 
+const dischargePatientValidation = checkSchema({
+  myCustomField: {
+    custom: {
+      options: (value, { req, location, path }) => {
+        const allowedFields: any = {
+          dischargeNotes: 'dischargeNotes',
+          finalBillAmount: 'finalBillAmount',
+          dischargeDate: 'dischargeDate',
+          dischargedBy: 'dischargedBy',
+        };
+
+        const keys = Object.keys(req.body || {});
+
+        // Allow empty body for discharge
+        if (keys.length === 0) {
+          return value + req.params + location + path;
+        }
+
+        keys.forEach((value) => {
+          if (!allowedFields[value]) {
+            throw new Error(`${ERRORS.invalidParameter} ${value}`);
+          }
+        });
+
+        // Validate discharge date if provided
+        if (req.body.dischargeDate && !/^\d{4}-\d{2}-\d{2}$/.test(req.body.dischargeDate)) {
+          throw new Error('Discharge date must be in format YYYY-MM-DD');
+        }
+
+        // Validate final bill amount if provided
+        if (req.body.finalBillAmount && (isNaN(req.body.finalBillAmount) || req.body.finalBillAmount < 0)) {
+          throw new Error('Final bill amount must be a positive number');
+        }
+
+        return value + req.params + location + path;
+      },
+    },
+  },
+  patientId: simpleIdSchemaFunc({
+    label: 'patientId',
+    dataIn: 'params',
+  }) as unknown as ParamSchema,
+  dischargeNotes: {
+    optional: true,
+    isString: {
+      errorMessage: 'Discharge notes must be a string',
+    },
+    isLength: {
+      options: { max: 1000 },
+      errorMessage: 'Discharge notes must be less than 1000 characters',
+    },
+  } as ParamSchema,
+  finalBillAmount: {
+    optional: true,
+    isFloat: {
+      options: { min: 0 },
+      errorMessage: 'Final bill amount must be a positive number',
+    },
+    toFloat: true,
+  } as ParamSchema,
+  dischargeDate: {
+    optional: true,
+    isISO8601: {
+      options: { strict: true },
+      errorMessage: 'Discharge date must be a valid date in YYYY-MM-DD format',
+    },
+  } as ParamSchema,
+  dischargedBy: {
+    optional: true,
+    isString: {
+      errorMessage: 'Discharged by must be a string',
+    },
+    isLength: {
+      options: { min: 2, max: 100 },
+      errorMessage: 'Discharged by must be between 2 and 100 characters',
+    },
+  } as ParamSchema,
+});
+
 export {
   createPatientValidation,
   getAllPatientsValidation,
   getPatientByIdValidation,
   updatePatientValidation,
   deletePatientValidation,
+  dischargePatientValidation,
 };

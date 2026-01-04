@@ -114,6 +114,7 @@ const getAllStaffValidation = checkSchema({
         const allowedFields: any = {
           role: 'role',
           onDuty: 'onDuty',
+          diseases: 'diseases', // Add diseases parameter for doctor filtering
         };
 
         const querykeys = Object.keys(req.query || {});
@@ -136,20 +137,44 @@ const getAllStaffValidation = checkSchema({
           throw new Error('onDuty must be true or false');
         }
 
-        return value + req.body + location + path;
+        // Validate diseases if provided
+        if (req.query?.diseases) {
+          const diseases = (req.query.diseases as string).split(',').map(d => d.trim());
+          const validDiseases = [
+            'fever', 'diabetes', 'blood-pressure', 'heart-disease', 'asthma', 
+            'arthritis', 'depression', 'anxiety', 'stroke', 'cancer', 
+            'kidney-disease', 'liver-disease'
+          ];
+          
+          const invalidDiseases = diseases.filter(d => !validDiseases.includes(d));
+          if (invalidDiseases.length > 0) {
+            throw new Error(`Invalid diseases: ${invalidDiseases.join(', ')}. Valid diseases are: ${validDiseases.join(', ')}`);
+          }
+        }
+
+        return value + req.query + location + path;
       },
     },
   },
   role: {
+    in: ['query'],
     optional: true,
     isString: {
       errorMessage: 'Role must be a string',
     },
   } as ParamSchema,
   onDuty: {
+    in: ['query'],
     optional: true,
     isString: {
       errorMessage: 'onDuty must be a string',
+    },
+  } as ParamSchema,
+  diseases: {
+    in: ['query'],
+    optional: true,
+    isString: {
+      errorMessage: 'Diseases must be a comma-separated string',
     },
   } as ParamSchema,
 });

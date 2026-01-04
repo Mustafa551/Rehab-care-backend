@@ -59,6 +59,11 @@ export interface Patient {
   currentMedications?: string; // JSON string
   lastAssessmentDate?: string;
   dischargeStatus?: 'continue' | 'ready' | 'pending';
+  // Discharge-specific fields
+  dischargeNotes?: string;
+  finalBillAmount?: number;
+  dischargeDate?: string;
+  dischargedBy?: string;
 }
 
 export interface Assignment {

@@ -124,6 +124,11 @@ export const updatePatient = async (
     currentMedications?: string[];
     lastAssessmentDate?: string;
     dischargeStatus?: 'continue' | 'ready' | 'pending';
+    // Discharge-specific fields
+    dischargeNotes?: string;
+    finalBillAmount?: number;
+    dischargeDate?: string;
+    dischargedBy?: string;
   }
 ): Promise<Patient | null> => {
   const database = getDb();
@@ -211,6 +216,24 @@ export const updatePatient = async (
   if (updateData.dischargeStatus !== undefined) {
     fields.push('dischargeStatus = @dischargeStatus');
     request.input('dischargeStatus', sql.NVarChar, updateData.dischargeStatus);
+  }
+  
+  // Discharge-specific fields
+  if (updateData.dischargeNotes !== undefined) {
+    fields.push('dischargeNotes = @dischargeNotes');
+    request.input('dischargeNotes', sql.NVarChar, updateData.dischargeNotes);
+  }
+  if (updateData.finalBillAmount !== undefined) {
+    fields.push('finalBillAmount = @finalBillAmount');
+    request.input('finalBillAmount', sql.Decimal(10, 2), updateData.finalBillAmount);
+  }
+  if (updateData.dischargeDate !== undefined) {
+    fields.push('dischargeDate = @dischargeDate');
+    request.input('dischargeDate', sql.Date, new Date(updateData.dischargeDate));
+  }
+  if (updateData.dischargedBy !== undefined) {
+    fields.push('dischargedBy = @dischargedBy');
+    request.input('dischargedBy', sql.NVarChar, updateData.dischargedBy);
   }
 
   if (fields.length === 0) {

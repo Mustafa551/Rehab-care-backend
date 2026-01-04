@@ -283,10 +283,89 @@ const deletePatientHandler = async (req: Request, res: Response) => {
   }
 };
 
+// DISCHARGE PATIENT
+const dischargePatientHandler = async (req: Request, res: Response) => {
+  try {
+    const patientId = parseInt(req.params.patientId, 10);
+    if (isNaN(patientId)) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Invalid patient ID',
+      });
+    }
+
+    // Check if patient exists
+    const existingPatient = await getPatientById(patientId);
+    if (!existingPatient) {
+      return res.status(STATUS.notFound).json({
+        error: true,
+        message: 'Patient not found',
+      });
+    }
+
+    // Check if patient is already discharged
+    if (existingPatient.status === 'discharged') {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Patient is already discharged',
+      });
+    }
+
+    // Get discharge data from request body (optional)
+    const {
+      dischargeNotes,
+      finalBillAmount,
+      dischargeDate,
+      dischargedBy
+    } = req.body;
+
+    // Prepare discharge data
+    const dischargeData = {
+      status: 'discharged' as const,
+      dischargeStatus: 'ready' as const,
+      // Add discharge-specific fields if provided
+      ...(dischargeNotes && { dischargeNotes }),
+      ...(finalBillAmount && { finalBillAmount }),
+      ...(dischargeDate && { dischargeDate }),
+      ...(dischargedBy && { dischargedBy }),
+    };
+
+    // Update patient with discharge information
+    const dischargedPatient = await updatePatient(patientId, dischargeData);
+
+    if (!dischargedPatient) {
+      return res.status(STATUS.serverError).json({
+        error: true,
+        message: 'Failed to discharge patient',
+      });
+    }
+
+    // Log discharge activity (optional - for audit trail)
+    console.log(`Patient ${dischargedPatient.name} (ID: ${patientId}) discharged at ${new Date().toISOString()}`);
+
+    return res.status(STATUS.success).json({
+      success: true,
+      message: `Patient ${dischargedPatient.name} has been successfully discharged`,
+      data: {
+        patient: dischargedPatient,
+        dischargeDate: dischargeDate || new Date().toISOString(),
+        message: 'Patient discharged successfully'
+      },
+    });
+  } catch (error: any) {
+    errorLogs('dischargePatient', error.message);
+    return res.status(STATUS.serverError).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
 export {
   getAllPatientsHandler as getAllPatients,
   getPatientByIdHandler as getPatientById,
   createPatientHandler as createPatient,
   updatePatientHandler as updatePatient,
   deletePatientHandler as deletePatient,
+  dischargePatientHandler as dischargePatient,
 };
