@@ -116,6 +116,105 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
+  // Create vital_signs table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='vital_signs' AND xtype='U')
+    CREATE TABLE vital_signs (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      patientId INT NOT NULL,
+      date DATE NOT NULL,
+      time TIME NOT NULL,
+      bloodPressure NVARCHAR(20) NOT NULL,
+      heartRate NVARCHAR(10) NOT NULL,
+      temperature NVARCHAR(10) NOT NULL,
+      oxygenSaturation NVARCHAR(10) NULL,
+      respiratoryRate NVARCHAR(10) NULL,
+      notes NVARCHAR(MAX) NULL,
+      recordedBy NVARCHAR(255) NOT NULL,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create nurse_reports table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='nurse_reports' AND xtype='U')
+    CREATE TABLE nurse_reports (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      patientId INT NOT NULL,
+      reportedBy NVARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      time TIME NOT NULL,
+      conditionUpdate NVARCHAR(MAX) NOT NULL,
+      symptoms NVARCHAR(MAX) NULL, -- JSON string of symptoms
+      painLevel INT NULL CHECK (painLevel >= 0 AND painLevel <= 10),
+      notes NVARCHAR(MAX) NULL,
+      urgency NVARCHAR(10) NOT NULL CHECK (urgency IN ('low', 'medium', 'high')),
+      reviewedByDoctor BIT DEFAULT 0,
+      doctorResponse NVARCHAR(MAX) NULL,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create patient_conditions table (doctor assessments)
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='patient_conditions' AND xtype='U')
+    CREATE TABLE patient_conditions (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      patientId INT NOT NULL,
+      assessedBy NVARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      condition NVARCHAR(MAX) NOT NULL,
+      notes NVARCHAR(MAX) NULL,
+      medications NVARCHAR(MAX) NULL, -- JSON string of medications
+      vitals NVARCHAR(MAX) NULL, -- JSON string of vital signs
+      dischargeRecommendation NVARCHAR(20) DEFAULT 'continue' CHECK (dischargeRecommendation IN ('continue', 'discharge')),
+      dischargeNotes NVARCHAR(MAX) NULL,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      updatedAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create medications table
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='medications' AND xtype='U')
+    CREATE TABLE medications (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      patientId INT NOT NULL,
+      prescribedBy NVARCHAR(255) NOT NULL,
+      medicationName NVARCHAR(255) NOT NULL,
+      dosage NVARCHAR(100) NOT NULL,
+      frequency NVARCHAR(100) NOT NULL,
+      startDate DATE NOT NULL,
+      endDate DATE NULL,
+      notes NVARCHAR(MAX) NULL,
+      isActive BIT DEFAULT 1,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create medication_administrations table with proper foreign key constraints
+  await database.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='medication_administrations' AND xtype='U')
+    CREATE TABLE medication_administrations (
+      id INT IDENTITY(1,1) PRIMARY KEY,
+      medicationId INT NOT NULL,
+      patientId INT NOT NULL,
+      scheduledTime TIME NOT NULL,
+      administeredTime TIME NULL,
+      administered BIT DEFAULT 0,
+      administeredBy NVARCHAR(255) NULL,
+      notes NVARCHAR(MAX) NULL,
+      date DATE NOT NULL,
+      createdAt DATETIME2 DEFAULT GETDATE(),
+      FOREIGN KEY (medicationId) REFERENCES medications(id) ON DELETE CASCADE,
+      FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE NO ACTION
+    )
+  `);
+
 
   // Create admin user if it doesn't exist
   await createAdminUser();

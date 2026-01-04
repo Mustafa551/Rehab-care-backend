@@ -4,6 +4,10 @@ import express, { Express, json, Request, Response } from 'express';
 import userRoutes from './routes/userRoutes';
 import staffRoutes from './routes/staffRoutes';
 import patientRoutes from './routes/patientRoutes';
+import vitalSignsRoutes from './routes/vitalSignsRoutes';
+import nurseReportsRoutes from './routes/nurseReportsRoutes';
+import patientConditionsRoutes from './routes/patientConditionsRoutes';
+import medicationsRoutes from './routes/medicationsRoutes';
 
 dotenv.config();
 
@@ -29,6 +33,10 @@ app.use(json());
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/staff', staffRoutes);
 app.use('/api/v1/patients', patientRoutes);
+app.use('/api/v1/vital-signs', vitalSignsRoutes);
+app.use('/api/v1/nurse-reports', nurseReportsRoutes);
+app.use('/api/v1/patient-conditions', patientConditionsRoutes);
+app.use('/api/v1/medications', medicationsRoutes);
 
 app.use((req: Request, res: Response) => {
   console.log('🚀 ~ app.use ~ req:', req);

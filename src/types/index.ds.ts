@@ -66,6 +66,83 @@ export interface Patient {
   dischargedBy?: string;
 }
 
+export interface VitalSigns {
+  id: number;
+  patientId: number;
+  date: string;
+  time: string;
+  bloodPressure: string;
+  heartRate: string;
+  temperature: string;
+  oxygenSaturation?: string;
+  respiratoryRate?: string;
+  notes?: string;
+  recordedBy: string;
+  createdAt: string;
+}
+
+export interface NurseReport {
+  id: number;
+  patientId: number;
+  reportedBy: string;
+  date: string;
+  time: string;
+  conditionUpdate: string;
+  symptoms: string[]; // Array of symptoms (parsed from JSON)
+  painLevel?: number;
+  notes?: string;
+  urgency: 'low' | 'medium' | 'high';
+  reviewedByDoctor: boolean;
+  doctorResponse?: string;
+  createdAt: string;
+}
+
+export interface PatientCondition {
+  id: number;
+  patientId: number;
+  assessedBy: string;
+  date: string;
+  condition: string;
+  notes?: string;
+  medications: any[]; // Array of medications (parsed from JSON)
+  vitals?: any; // Vital signs object (parsed from JSON)
+  dischargeRecommendation: 'continue' | 'discharge';
+  dischargeNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Medication {
+  id: number;
+  patientId: number;
+  prescribedBy: string;
+  medicationName: string;
+  dosage: string;
+  frequency: string;
+  startDate: string;
+  endDate?: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface MedicationAdministration {
+  id: number;
+  medicationId: number;
+  patientId: number;
+  scheduledTime: string;
+  administeredTime?: string;
+  administered: boolean;
+  administeredBy?: string;
+  notes?: string;
+  date: string;
+  createdAt: string;
+  // Joined fields from medication
+  medicationName?: string;
+  dosage?: string;
+  frequency?: string;
+}
+
 export interface TextValidationSchema {
   in: string[];
   exists?: { options: { checkNull: boolean; checkFalsy: boolean } } | null;
