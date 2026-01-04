@@ -20,7 +20,7 @@ const getAllStaffHandler = async (req: Request, res: Response) => {
     let staff;
 
     if (role) {
-      staff = await getStaffByRole(role as 'nurse' | 'caretaker' | 'therapist' | 'doctor');
+      staff = await getStaffByRole(role as 'nurse' | 'doctor');
     } else if (onDuty === 'true') {
       staff = await getOnDutyStaff();
     } else {
@@ -76,7 +76,15 @@ const getStaffByIdHandler = async (req: Request, res: Response) => {
 // CREATE STAFF
 const createStaffHandler = async (req: Request, res: Response) => {
   try {
-    const { name, role, email, phone, isOnDuty, photoUrl } = req.body;
+    const { name, role, email, phone, isOnDuty, photoUrl, specialization, nurseType } = req.body;
+
+    // Validate role-specific requirements
+    if (role === 'doctor' && !specialization) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Specialization is required for doctors',
+      });
+    }
 
     // Check if staff with email already exists
     const existingStaff = await getStaffByEmail(email);
@@ -87,15 +95,25 @@ const createStaffHandler = async (req: Request, res: Response) => {
       });
     }
 
-    // Create staff member
-    const staff = await createStaff({
-      name,
+    // Prepare staff data
+    const staffData: any = {
+      name: role === 'doctor' ? `Dr. ${name}` : name, // Add Dr. prefix for doctors
       role,
       email,
       phone,
       isOnDuty,
       photoUrl,
-    });
+    };
+
+    // Add role-specific fields
+    if (role === 'doctor') {
+      staffData.specialization = specialization;
+    } else if (role === 'nurse') {
+      staffData.nurseType = nurseType || 'fresh';
+    }
+
+    // Create staff member
+    const staff = await createStaff(staffData);
 
     return res.status(STATUS.created).json({
       success: true,
@@ -122,7 +140,7 @@ const updateStaffHandler = async (req: Request, res: Response) => {
       });
     }
 
-    const { name, role, email, phone, isOnDuty, photoUrl } = req.body;
+    const { name, role, email, phone, isOnDuty, photoUrl, specialization, nurseType } = req.body;
 
     // Check if staff exists
     const existingStaff = await getStaffById(staffId);
@@ -144,13 +162,25 @@ const updateStaffHandler = async (req: Request, res: Response) => {
       }
     }
 
+    // Validate role-specific requirements
+    if (role === 'doctor' && !specialization && !existingStaff.specialization) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Specialization is required for doctors',
+      });
+    }
+
     const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
+    if (name !== undefined) {
+      updateData.name = role === 'doctor' || existingStaff.role === 'doctor' ? `Dr. ${name}` : name;
+    }
     if (role !== undefined) updateData.role = role;
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
     if (isOnDuty !== undefined) updateData.isOnDuty = isOnDuty;
     if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+    if (specialization !== undefined) updateData.specialization = specialization;
+    if (nurseType !== undefined) updateData.nurseType = nurseType;
 
     const updatedStaff = await updateStaff(staffId, updateData);
 

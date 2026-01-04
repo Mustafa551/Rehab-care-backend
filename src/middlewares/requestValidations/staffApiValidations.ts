@@ -3,10 +3,16 @@ import { ERRORS } from '../../messages/errors';
 import {
   emailAddressSchema,
   simpleIdSchemaFunc,
-  simpleTextSchemaFunc
+  simpleTextSchemaFunc,
+  pakistaniPhoneSchema,
+  staffRoleSchema,
+  doctorSpecializationSchema,
+  nurseTypeSchema
 } from '../../utils/requestValidations';
 
-const staffRoles = ['nurse', 'caretaker', 'therapist', 'doctor'];
+const staffRoles = ['nurse', 'doctor']; // Updated to only allow nurse and doctor
+const doctorSpecializations = ['cardiologist', 'endocrinologist', 'pulmonologist', 'psychiatrist', 'general', 'oncologist', 'neurologist'];
+const nurseTypes = ['fresh', 'bscn'];
 
 const createStaffValidation = checkSchema({
   myCustomField: {
@@ -19,6 +25,8 @@ const createStaffValidation = checkSchema({
           phone: 'phone',
           isOnDuty: 'isOnDuty',
           photoUrl: 'photoUrl',
+          specialization: 'specialization',
+          nurseType: 'nurseType',
         };
 
         const keys = Object.keys(req.body);
@@ -40,9 +48,29 @@ const createStaffValidation = checkSchema({
           );
         }
 
-        // Validate phone format (basic validation for XXX-XXXX format)
-        if (req.body.phone && !/^\d{3}-\d{4}$/.test(req.body.phone)) {
-          throw new Error('Phone number must be in format XXX-XXXX');
+        // Validate Pakistani phone format
+        if (req.body.phone) {
+          const phoneRegex = /^(\+92|0)?[0-9]{3}-?[0-9]{7}$|^(\+92|0)?[0-9]{10}$/;
+          if (!phoneRegex.test(req.body.phone.replace(/\s/g, ''))) {
+            throw new Error('Please enter a valid Pakistani phone number (e.g., +92-300-1234567 or 0300-1234567)');
+          }
+        }
+
+        // Validate doctor specialization
+        if (req.body.role === 'doctor') {
+          if (!req.body.specialization) {
+            throw new Error('Specialization is required for doctors');
+          }
+          if (!doctorSpecializations.includes(req.body.specialization)) {
+            throw new Error(`Invalid specialization. Allowed values are ${doctorSpecializations.join(', ')}`);
+          }
+        }
+
+        // Validate nurse type
+        if (req.body.role === 'nurse' && req.body.nurseType) {
+          if (!nurseTypes.includes(req.body.nurseType)) {
+            throw new Error(`Invalid nurse type. Allowed values are ${nurseTypes.join(', ')}`);
+          }
         }
 
         return value + req.body + location + path;
@@ -52,26 +80,31 @@ const createStaffValidation = checkSchema({
   name: simpleTextSchemaFunc({
     label: 'name',
     required: true,
+    minLength: 2,
+    maxLength: 100,
   }) as unknown as ParamSchema,
-  role: simpleTextSchemaFunc({
-    label: 'role',
-    required: true,
-  }) as unknown as ParamSchema,
+  role: staffRoleSchema({}) as ParamSchema,
   email: emailAddressSchema({}) as ParamSchema,
-  phone: simpleTextSchemaFunc({
-    label: 'phone',
-    required: true,
-  }) as unknown as ParamSchema,
+  phone: pakistaniPhoneSchema({}) as ParamSchema,
   isOnDuty: {
     optional: true,
     isBoolean: {
       errorMessage: 'isOnDuty must be a boolean value',
     },
+    toBoolean: true,
   } as ParamSchema,
-  photoUrl: simpleTextSchemaFunc({
-    label: 'photoUrl',
-    required: false,
-  }) as unknown as ParamSchema,
+  photoUrl: {
+    optional: true,
+    isString: {
+      errorMessage: 'Photo URL must be a string',
+    },
+    isURL: {
+      options: { require_protocol: true },
+      errorMessage: 'Photo URL must be a valid URL',
+    },
+  } as ParamSchema,
+  specialization: doctorSpecializationSchema({}) as ParamSchema,
+  nurseType: nurseTypeSchema({}) as ParamSchema,
 });
 
 const getAllStaffValidation = checkSchema({
@@ -149,6 +182,8 @@ const updateStaffValidation = checkSchema({
           phone: 'phone',
           isOnDuty: 'isOnDuty',
           photoUrl: 'photoUrl',
+          specialization: 'specialization',
+          nurseType: 'nurseType',
         };
 
         const keys = Object.keys(req.body);
@@ -170,9 +205,22 @@ const updateStaffValidation = checkSchema({
           );
         }
 
-        // Validate phone format if provided
-        if (req.body.phone && !/^\d{3}-\d{4}$/.test(req.body.phone)) {
-          throw new Error('Phone number must be in format XXX-XXXX');
+        // Validate Pakistani phone format if provided
+        if (req.body.phone) {
+          const phoneRegex = /^(\+92|0)?[0-9]{3}-?[0-9]{7}$|^(\+92|0)?[0-9]{10}$/;
+          if (!phoneRegex.test(req.body.phone.replace(/\s/g, ''))) {
+            throw new Error('Please enter a valid Pakistani phone number (e.g., +92-300-1234567 or 0300-1234567)');
+          }
+        }
+
+        // Validate doctor specialization if provided
+        if (req.body.specialization && !doctorSpecializations.includes(req.body.specialization)) {
+          throw new Error(`Invalid specialization. Allowed values are ${doctorSpecializations.join(', ')}`);
+        }
+
+        // Validate nurse type if provided
+        if (req.body.nurseType && !nurseTypes.includes(req.body.nurseType)) {
+          throw new Error(`Invalid nurse type. Allowed values are ${nurseTypes.join(', ')}`);
         }
 
         return value + req.body + location + path;
@@ -182,26 +230,41 @@ const updateStaffValidation = checkSchema({
   name: simpleTextSchemaFunc({
     label: 'name',
     required: false,
+    minLength: 2,
+    maxLength: 100,
   }) as unknown as ParamSchema,
-  role: simpleTextSchemaFunc({
-    label: 'role',
-    required: false,
-  }) as unknown as ParamSchema,
+  role: {
+    optional: true,
+    isString: {
+      errorMessage: 'Role must be a string',
+      bail: true,
+    },
+    isIn: {
+      options: [staffRoles],
+      errorMessage: `Role must be one of: ${staffRoles.join(', ')}`,
+    },
+  } as ParamSchema,
   email: emailAddressSchema({ required: false }) as ParamSchema,
-  phone: simpleTextSchemaFunc({
-    label: 'phone',
-    required: false,
-  }) as unknown as ParamSchema,
+  phone: pakistaniPhoneSchema({ required: false }) as ParamSchema,
   isOnDuty: {
     optional: true,
     isBoolean: {
       errorMessage: 'isOnDuty must be a boolean value',
     },
+    toBoolean: true,
   } as ParamSchema,
-  photoUrl: simpleTextSchemaFunc({
-    label: 'photoUrl',
-    required: false,
-  }) as unknown as ParamSchema,
+  photoUrl: {
+    optional: true,
+    isString: {
+      errorMessage: 'Photo URL must be a string',
+    },
+    isURL: {
+      options: { require_protocol: true },
+      errorMessage: 'Photo URL must be a valid URL',
+    },
+  } as ParamSchema,
+  specialization: doctorSpecializationSchema({}) as ParamSchema,
+  nurseType: nurseTypeSchema({}) as ParamSchema,
   staffId: simpleIdSchemaFunc({ label: 'staffId', dataIn: 'params' }) as unknown as ParamSchema,
 });
 

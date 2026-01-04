@@ -60,84 +60,24 @@ const initializeTables = async (): Promise<void> => {
     )
   `);
 
-  // Create FCM tokens table
-  await database.request().query(`
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='fcm_tokens' AND xtype='U')
-    CREATE TABLE fcm_tokens (
-      id INT IDENTITY(1,1) PRIMARY KEY,
-      userId INT NOT NULL,
-      deviceId NVARCHAR(255) NOT NULL,
-      fcmToken NVARCHAR(MAX) NOT NULL,
-      platform NVARCHAR(50),
-      createdAt DATETIME2 DEFAULT GETDATE(),
-      updatedAt DATETIME2 DEFAULT GETDATE(),
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
   // Create staff table
   await database.request().query(`
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='staff' AND xtype='U')
     CREATE TABLE staff (
       id INT IDENTITY(1,1) PRIMARY KEY,
       name NVARCHAR(255) NOT NULL,
-      role NVARCHAR(50) NOT NULL CHECK (role IN ('nurse', 'caretaker', 'therapist', 'doctor')),
+      role NVARCHAR(50) NOT NULL CHECK (role IN ('nurse', 'doctor')),
       email NVARCHAR(255) UNIQUE NOT NULL,
       phone NVARCHAR(20) NOT NULL,
       isOnDuty BIT DEFAULT 1,
       photoUrl NVARCHAR(MAX),
+      specialization NVARCHAR(50) NULL CHECK (specialization IS NULL OR specialization IN ('cardiologist', 'endocrinologist', 'pulmonologist', 'psychiatrist', 'general', 'oncologist', 'neurologist')),
+      nurseType NVARCHAR(20) NULL CHECK (nurseType IS NULL OR nurseType IN ('fresh', 'bscn')),
       createdAt DATETIME2 DEFAULT GETDATE(),
       updatedAt DATETIME2 DEFAULT GETDATE()
     )
   `);
 
-  // Create staff assignments table
-  await database.request().query(`
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='staff_assignments' AND xtype='U')
-    CREATE TABLE staff_assignments (
-      id INT IDENTITY(1,1) PRIMARY KEY,
-      staffId INT NOT NULL,
-      patientId NVARCHAR(50) NOT NULL,
-      date DATE NOT NULL,
-      createdAt DATETIME2 DEFAULT GETDATE(),
-      updatedAt DATETIME2 DEFAULT GETDATE(),
-      FOREIGN KEY (staffId) REFERENCES staff(id) ON DELETE CASCADE,
-      UNIQUE(patientId, date)
-    )
-  `);
-
-  // Create patients table
-  await database.request().query(`
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='patients' AND xtype='U')
-    CREATE TABLE patients (
-      id INT IDENTITY(1,1) PRIMARY KEY,
-      name NVARCHAR(255) NOT NULL,
-      email NVARCHAR(255) UNIQUE NOT NULL,
-      phone NVARCHAR(20) NOT NULL,
-      dateOfBirth DATE NOT NULL,
-      medicalCondition NVARCHAR(500) NOT NULL,
-      assignedDoctorId INT,
-      status NVARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'discharged')),
-      createdAt DATETIME2 DEFAULT GETDATE(),
-      updatedAt DATETIME2 DEFAULT GETDATE(),
-      FOREIGN KEY (assignedDoctorId) REFERENCES staff(id) ON DELETE SET NULL
-    )
-  `);
-
-  // Create doctor-patient permanent assignments table
-  await database.request().query(`
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='doctor_patient_assignments' AND xtype='U')
-    CREATE TABLE doctor_patient_assignments (
-      id INT IDENTITY(1,1) PRIMARY KEY,
-      doctorId INT NOT NULL,
-      patientId NVARCHAR(50) NOT NULL,
-      assignedDate DATE DEFAULT GETDATE(),
-      createdAt DATETIME2 DEFAULT GETDATE(),
-      updatedAt DATETIME2 DEFAULT GETDATE(),
-      FOREIGN KEY (doctorId) REFERENCES staff(id) ON DELETE CASCADE,
-      UNIQUE(patientId)
-    )
-  `);
 
   // Create admin user if it doesn't exist
   await createAdminUser();

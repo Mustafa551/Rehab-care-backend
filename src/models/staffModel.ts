@@ -27,11 +27,13 @@ export const getStaffByEmail = async (email: string): Promise<Staff | null> => {
 
 export const createStaff = async (staffData: {
   name: string;
-  role: 'nurse' | 'caretaker' | 'therapist' | 'doctor';
+  role: 'nurse' | 'doctor';
   email: string;
   phone: string;
   isOnDuty?: boolean;
   photoUrl?: string;
+  specialization?: string;
+  nurseType?: 'fresh' | 'bscn';
 }): Promise<Staff> => {
   const database = getDb();
   const request = database.request();
@@ -42,11 +44,13 @@ export const createStaff = async (staffData: {
   request.input('phone', sql.NVarChar, staffData.phone);
   request.input('isOnDuty', sql.Bit, staffData.isOnDuty ?? true);
   request.input('photoUrl', sql.NVarChar, staffData.photoUrl || null);
+  request.input('specialization', sql.NVarChar, staffData.specialization || null);
+  request.input('nurseType', sql.NVarChar, staffData.nurseType || null);
   
   const result = await request.query(`
-    INSERT INTO staff (name, role, email, phone, isOnDuty, photoUrl)
+    INSERT INTO staff (name, role, email, phone, isOnDuty, photoUrl, specialization, nurseType)
     OUTPUT INSERTED.id
-    VALUES (@name, @role, @email, @phone, @isOnDuty, @photoUrl)
+    VALUES (@name, @role, @email, @phone, @isOnDuty, @photoUrl, @specialization, @nurseType)
   `);
 
   const insertedId = result.recordset[0].id;
@@ -61,11 +65,13 @@ export const updateStaff = async (
   id: number,
   updateData: {
     name?: string;
-    role?: 'nurse' | 'caretaker' | 'therapist' | 'doctor';
+    role?: 'nurse' | 'doctor';
     email?: string;
     phone?: string;
     isOnDuty?: boolean;
     photoUrl?: string;
+    specialization?: string;
+    nurseType?: 'fresh' | 'bscn';
   }
 ): Promise<Staff | null> => {
   const database = getDb();
@@ -96,6 +102,14 @@ export const updateStaff = async (
     fields.push('photoUrl = @photoUrl');
     request.input('photoUrl', sql.NVarChar, updateData.photoUrl);
   }
+  if (updateData.specialization !== undefined) {
+    fields.push('specialization = @specialization');
+    request.input('specialization', sql.NVarChar, updateData.specialization);
+  }
+  if (updateData.nurseType !== undefined) {
+    fields.push('nurseType = @nurseType');
+    request.input('nurseType', sql.NVarChar, updateData.nurseType);
+  }
 
   if (fields.length === 0) {
     return getStaffById(id);
@@ -115,7 +129,7 @@ export const deleteStaff = async (id: number): Promise<void> => {
   await request.query('DELETE FROM staff WHERE id = @id');
 };
 
-export const getStaffByRole = async (role: 'nurse' | 'caretaker' | 'therapist' | 'doctor'): Promise<Staff[]> => {
+export const getStaffByRole = async (role: 'nurse' | 'doctor'): Promise<Staff[]> => {
   const database = getDb();
   const request = database.request();
   request.input('role', sql.NVarChar, role);

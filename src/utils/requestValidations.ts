@@ -91,3 +91,71 @@ export const simpleIdSchemaFunc = ({
   },
   toInt: true,
 });
+
+// Pakistani phone number validation
+export const pakistaniPhoneSchema = ({ dataIn = 'body', required = true }) => ({
+  in: [dataIn],
+  exists: required ? { options: { checkNull: true, checkFalsy: true } } : null,
+  optional: required ? null : { options: { nullable: true } },
+  errorMessage: 'Phone number is required',
+  isString: {
+    errorMessage: 'Phone number must be a string',
+    bail: true,
+  },
+  notEmpty: {
+    options: { ignore_whitespace: true },
+    errorMessage: 'Phone number must not be empty',
+    bail: true,
+  },
+  matches: {
+    options: /^(\+92|0)?[0-9]{3}-?[0-9]{7}$|^(\+92|0)?[0-9]{10}$/,
+    errorMessage: 'Please enter a valid Pakistani phone number (e.g., +92-300-1234567 or 0300-1234567)',
+  },
+  trim: true,
+});
+
+// Staff role validation
+export const staffRoleSchema = ({ dataIn = 'body', required = true }) => ({
+  in: [dataIn],
+  exists: required ? { options: { checkNull: true, checkFalsy: true } } : null,
+  optional: required ? null : { options: { nullable: true } },
+  errorMessage: 'Role is required',
+  isString: {
+    errorMessage: 'Role must be a string',
+    bail: true,
+  },
+  isIn: {
+    options: [['nurse', 'doctor']],
+    errorMessage: 'Role must be either nurse or doctor',
+  },
+});
+
+// Doctor specialization validation
+export const doctorSpecializationSchema = ({ dataIn = 'body', required = false }) => ({
+  in: [dataIn],
+  optional: { options: { nullable: true } },
+  errorMessage: 'Specialization must be a valid option',
+  isString: {
+    errorMessage: 'Specialization must be a string',
+    bail: true,
+  },
+  isIn: {
+    options: [['cardiologist', 'endocrinologist', 'pulmonologist', 'psychiatrist', 'general', 'oncologist', 'neurologist']],
+    errorMessage: 'Invalid specialization selected',
+  },
+});
+
+// Nurse type validation
+export const nurseTypeSchema = ({ dataIn = 'body', required = false }) => ({
+  in: [dataIn],
+  optional: { options: { nullable: true } },
+  errorMessage: 'Nurse type must be a valid option',
+  isString: {
+    errorMessage: 'Nurse type must be a string',
+    bail: true,
+  },
+  isIn: {
+    options: [['fresh', 'bscn']],
+    errorMessage: 'Nurse type must be either fresh or bscn',
+  },
+});
