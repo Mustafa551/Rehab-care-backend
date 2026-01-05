@@ -144,7 +144,7 @@ const initializeTables = async (): Promise<void> => {
       patientId INT NOT NULL,
       reportedBy NVARCHAR(255) NOT NULL,
       date DATE NOT NULL,
-      time TIME NOT NULL,
+      time NVARCHAR(8) NOT NULL,
       conditionUpdate NVARCHAR(MAX) NOT NULL,
       symptoms NVARCHAR(MAX) NULL, -- JSON string of symptoms
       painLevel INT NULL CHECK (painLevel >= 0 AND painLevel <= 10),

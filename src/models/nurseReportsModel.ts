@@ -53,10 +53,17 @@ export const createNurseReport = async (reportData: {
   const database = getDb();
   const request = database.request();
   
+  // Ensure time is in proper format for NVARCHAR(8) storage
+  let timeValue = reportData.time;
+  if (timeValue && timeValue.length === 5) {
+    // Convert HH:MM to HH:MM:SS for consistent storage
+    timeValue = timeValue + ':00';
+  }
+  
   request.input('patientId', sql.Int, reportData.patientId);
   request.input('reportedBy', sql.NVarChar, reportData.reportedBy);
   request.input('date', sql.Date, new Date(reportData.date));
-  request.input('time', sql.Time, reportData.time);
+  request.input('time', sql.NVarChar(8), timeValue);
   request.input('conditionUpdate', sql.NVarChar, reportData.conditionUpdate);
   request.input('symptoms', sql.NVarChar, reportData.symptoms ? JSON.stringify(reportData.symptoms) : null);
   request.input('painLevel', sql.Int, reportData.painLevel || null);

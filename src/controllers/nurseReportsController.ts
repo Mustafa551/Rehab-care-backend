@@ -100,11 +100,15 @@ export const createNurseReport = async (req: Request, res: Response) => {
       urgency,
     } = req.body;
 
-    // Validate required fields
-    if (!patientId || !reportedBy || !date || !time || !conditionUpdate || !urgency) {
+    // Default to current time if not provided
+    const currentTime = new Date().toTimeString().slice(0, 8); // HH:MM:SS format
+    const reportTime = time || currentTime;
+
+    // Validate required fields (time is now optional)
+    if (!patientId || !reportedBy || !date || !conditionUpdate || !urgency) {
       return res.status(STATUS.badRequest).json({
         error: true,
-        message: 'Patient ID, reported by, date, time, condition update, and urgency are required',
+        message: 'Patient ID, reported by, date, condition update, and urgency are required',
       });
     }
 
@@ -128,7 +132,7 @@ export const createNurseReport = async (req: Request, res: Response) => {
       patientId: Number(patientId),
       reportedBy,
       date,
-      time,
+      time: reportTime,
       conditionUpdate,
       symptoms: symptoms || [],
       painLevel: painLevel ? Number(painLevel) : undefined,
