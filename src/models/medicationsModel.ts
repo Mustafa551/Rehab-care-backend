@@ -183,9 +183,15 @@ export const createMedicationAdministration = async (administrationData: {
   const database = getDb();
   const request = database.request();
   
+  // Convert time to proper format
+  let timeValue = administrationData.scheduledTime;
+  if (timeValue && timeValue.length === 5) {
+    // Time is already in HH:MM format, keep as is for NVARCHAR storage
+  }
+  
   request.input('medicationId', sql.Int, administrationData.medicationId);
   request.input('patientId', sql.Int, administrationData.patientId);
-  request.input('scheduledTime', sql.Time, administrationData.scheduledTime);
+  request.input('scheduledTime', sql.NVarChar(8), timeValue);
   request.input('date', sql.Date, new Date(administrationData.date));
   request.input('notes', sql.NVarChar, administrationData.notes || null);
   
@@ -262,7 +268,7 @@ export const updateMedicationAdministration = async (
       if (key === 'administered') {
         request.input(key, sql.Bit, params[key]);
       } else if (key === 'administeredTime') {
-        request.input(key, sql.Time, params[key]);
+        request.input(key, sql.NVarChar(8), params[key]);
       } else {
         request.input(key, sql.NVarChar, params[key]);
       }

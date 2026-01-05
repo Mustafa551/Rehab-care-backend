@@ -73,6 +73,16 @@ export const createVitalSigns = async (req: Request, res: Response) => {
       });
     }
 
+    // Validate time format (should be HH:MM or HH:MM:SS)
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+    console.log('Received time value:', time, 'Type:', typeof time);
+    if (!timeRegex.test(time)) {
+      return res.status(STATUS.badRequest).json({
+        error: true,
+        message: 'Time must be in HH:MM or HH:MM:SS format',
+      });
+    }
+
     const vitalSigns = await vitalSignsModel.createVitalSigns({
       patientId: Number(patientId),
       date,

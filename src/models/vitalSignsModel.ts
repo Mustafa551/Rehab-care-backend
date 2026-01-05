@@ -41,9 +41,18 @@ export const createVitalSigns = async (vitalData: {
   const database = getDb();
   const request = database.request();
   
+  // Ensure time format is consistent (HH:MM)
+  let timeValue = vitalData.time;
+  if (timeValue && timeValue.length === 5) {
+    // Time is already in HH:MM format, keep as is
+  } else if (timeValue && timeValue.length === 8) {
+    // Time is in HH:MM:SS format, truncate to HH:MM
+    timeValue = timeValue.substring(0, 5);
+  }
+  
   request.input('patientId', sql.Int, vitalData.patientId);
   request.input('date', sql.Date, new Date(vitalData.date));
-  request.input('time', sql.Time, vitalData.time);
+  request.input('time', sql.NVarChar(8), timeValue);
   request.input('bloodPressure', sql.NVarChar, vitalData.bloodPressure);
   request.input('heartRate', sql.NVarChar, vitalData.heartRate);
   request.input('temperature', sql.NVarChar, vitalData.temperature);
@@ -105,7 +114,15 @@ export const updateVitalSigns = async (
   }
   if (vitalData.time !== undefined) {
     updateFields.push('time = @time');
-    params.time = vitalData.time;
+    // Ensure time format is consistent (HH:MM)
+    let timeValue = vitalData.time;
+    if (timeValue && timeValue.length === 5) {
+      // Time is already in HH:MM format, keep as is
+    } else if (timeValue && timeValue.length === 8) {
+      // Time is in HH:MM:SS format, truncate to HH:MM
+      timeValue = timeValue.substring(0, 5);
+    }
+    params.time = timeValue;
   }
   if (vitalData.bloodPressure !== undefined) {
     updateFields.push('bloodPressure = @bloodPressure');
@@ -142,7 +159,7 @@ export const updateVitalSigns = async (
       if (key === 'date') {
         request.input(key, sql.Date, params[key]);
       } else if (key === 'time') {
-        request.input(key, sql.Time, params[key]);
+        request.input(key, sql.NVarChar(8), params[key]);
       } else {
         request.input(key, sql.NVarChar, params[key]);
       }
