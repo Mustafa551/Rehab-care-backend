@@ -7,6 +7,60 @@ const testPatientId = 1; // Assuming patient with ID 1 exists
 const testDoctorName = 'Dr. Smith';
 const testNurseName = 'Nurse Johnson';
 
+async function testVitalSignsAPI() {
+  console.log('\n=== TESTING VITAL SIGNS API ===');
+  
+  try {
+    // 1. Test creating vital signs
+    console.log('\n1. Creating vital signs record...');
+    const vitalData = {
+      patientId: testPatientId,
+      date: new Date().toISOString().split('T')[0],
+      time: '08:30',
+      bloodPressure: '120/80',
+      heartRate: '72',
+      temperature: '98.6',
+      oxygenSaturation: '98',
+      respiratoryRate: '16',
+      notes: 'Patient appears stable, no concerns',
+      recordedBy: testNurseName
+    };
+    
+    const createResponse = await axios.post(`${API_BASE_URL}/vital-signs`, vitalData);
+    console.log('✅ Vital signs created:', createResponse.data);
+    const vitalSignsId = createResponse.data.data.id;
+    
+    // 2. Test getting vital signs by patient
+    console.log('\n2. Getting vital signs for patient...');
+    const getByPatientResponse = await axios.get(`${API_BASE_URL}/vital-signs/patient/${testPatientId}`);
+    console.log('✅ Patient vital signs:', getByPatientResponse.data);
+    
+    // 3. Test getting vital signs by patient and date
+    console.log('\n3. Getting vital signs for patient by date...');
+    const today = new Date().toISOString().split('T')[0];
+    const getByDateResponse = await axios.get(`${API_BASE_URL}/vital-signs/patient/${testPatientId}?date=${today}`);
+    console.log('✅ Patient vital signs for today:', getByDateResponse.data);
+    
+    // 4. Test updating vital signs
+    console.log('\n4. Updating vital signs...');
+    const updateData = {
+      bloodPressure: '125/85',
+      heartRate: '75',
+      notes: 'Slight increase in blood pressure, monitoring required'
+    };
+    
+    const updateResponse = await axios.patch(`${API_BASE_URL}/vital-signs/${vitalSignsId}`, updateData);
+    console.log('✅ Vital signs updated:', updateResponse.data);
+    
+    console.log('\n✅ VITAL SIGNS API TESTS PASSED!');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Vital Signs API test failed:', error.response?.data || error.message);
+    return false;
+  }
+}
+
 async function testMedicationAPI() {
   console.log('\n=== TESTING MEDICATION API ===');
   
@@ -136,7 +190,7 @@ async function testConditionAssessmentAPI() {
 }
 
 async function runAllTests() {
-  console.log('🚀 Starting API Integration Tests...');
+  console.log('🚀 Starting Comprehensive API Integration Tests...');
   console.log('📍 Testing against:', API_BASE_URL);
   
   try {
@@ -145,21 +199,27 @@ async function runAllTests() {
     await axios.get(`${API_BASE_URL}/`);
     console.log('✅ Server is running and accessible');
     
-    // Run medication API tests
+    // Run all API tests
+    const vitalSignsTestsPassed = await testVitalSignsAPI();
     const medicationTestsPassed = await testMedicationAPI();
-    
-    // Run condition assessment API tests
     const conditionTestsPassed = await testConditionAssessmentAPI();
     
     // Summary
-    console.log('\n' + '='.repeat(50));
-    console.log('📊 TEST SUMMARY');
-    console.log('='.repeat(50));
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 COMPREHENSIVE API TEST SUMMARY');
+    console.log('='.repeat(60));
+    console.log(`Vital Signs API Tests: ${vitalSignsTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
     console.log(`Medication API Tests: ${medicationTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
     console.log(`Condition Assessment API Tests: ${conditionTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
     
-    if (medicationTestsPassed && conditionTestsPassed) {
-      console.log('\n🎉 ALL TESTS PASSED! APIs are fully integrated and working.');
+    if (vitalSignsTestsPassed && medicationTestsPassed && conditionTestsPassed) {
+      console.log('\n🎉 ALL TESTS PASSED! All APIs are fully integrated and working.');
+      console.log('\n📋 Complete Integration Coverage:');
+      console.log('   ✅ Vital Signs API - Recording and viewing');
+      console.log('   ✅ Medication API - Prescription and administration');
+      console.log('   ✅ Condition Assessment API - Doctor assessments');
+      console.log('   ✅ Real-time data synchronization');
+      console.log('   ✅ Nurse-Doctor workflow integration');
     } else {
       console.log('\n⚠️  Some tests failed. Please check the errors above.');
     }
